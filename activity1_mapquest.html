@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Activity 1 - MapQuest API Key Authentication</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      color: #333;
+      padding: 30px 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 6px;
+      color: #2c3e50;
+    }
+    h2 {
+      text-align: center;
+      font-size: 16px;
+      font-weight: normal;
+      color: #666;
+      margin-bottom: 24px;
+    }
+    .form-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 5px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #3498db;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    button:hover { background: #2980b9; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    #status {
+      text-align: center;
+      font-size: 14px;
+      min-height: 20px;
+      margin-bottom: 16px;
+      color: #e74c3c;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin: 20px 0 10px;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    th {
+      background: #3498db;
+      color: white;
+      padding: 9px 12px;
+      text-align: left;
+    }
+    td {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f9f9f9; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .summary-card {
+      background: #eaf4fb;
+      border: 1px solid #b8d9ef;
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+    .summary-card .label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .summary-card .value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge-success { background: #d5f5e3; color: #1e8449; }
+    .badge-fail { background: #fdecea; color: #c0392b; }
+    #results { display: none; }
+    #history-section { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Integrative Programming and Technologies 1</h1>
+  <h2>Activity 1 &mdash; MapQuest API: Route Finder</h2>
+
+  <div class="form-group">
+    <div>
+      <label for="from">Starting Location</label>
+      <input type="text" id="from" placeholder="e.g. Cagayan de Oro City" />
+    </div>
+    <div>
+      <label for="to">Destination</label>
+      <input type="text" id="to" placeholder="e.g. Iligan City" />
+    </div>
+  </div>
+
+  <button id="btn" onclick="getRoute()">Get Route</button>
+  <div id="status"></div>
+
+  <div id="results">
+    <div class="section-title">Route Summary</div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="label">Distance</div>
+        <div class="value" id="dist">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Travel Time</div>
+        <div class="value" id="time">—</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Status</div>
+        <div class="value" id="route-status">—</div>
+      </div>
+    </div>
+
+    <div class="section-title">API Request &amp; Response Details</div>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Value</th></tr>
+      </thead>
+      <tbody id="api-details"></tbody>
+    </table>
+
+    <div class="section-title">Turn-by-Turn Directions</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Instruction</th>
+          <th>Distance</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="maneuvers"></tbody>
+    </table>
+  </div>
+
+  <div id="history-section">
+    <div class="section-title">Execution History</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Run #</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Distance</th>
+          <th>Travel Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const API_KEY = 'BxF0Bf72yRAXrag1CMmFGWYKUq1zZUFn';
+  let runCount = 0;
+  const history = [];
+
+  function formatTime(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    if (h > 0) return h + ' hr ' + m + ' min';
+    return m + ' min';
+  }
+
+  async function getRoute() {
+    const from = document.getElementById('from').value.trim();
+    const to = document.getElementById('to').value.trim();
+    const statusEl = document.getElementById('status');
+    const btn = document.getElementById('btn');
+
+    if (!from || !to) {
+      statusEl.textContent = 'Please fill in both the starting location and destination.';
+      return;
+    }
+
+    statusEl.textContent = 'Fetching route, please wait...';
+    statusEl.style.color = '#888';
+    btn.disabled = true;
+    document.getElementById('results').style.display = 'none';
+
+    const url = 'https://www.mapquestapi.com/directions/v2/route' +
+      '?key=' + API_KEY +
+      '&from=' + encodeURIComponent(from) +
+      '&to=' + encodeURIComponent(to) +
+      '&outFormat=json&ambiguities=ignore&routeType=fastest' +
+      '&doReverseGeocode=false&enhancedNarrative=false';
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const route = data.route;
+
+      if (!route || (route.routeError && route.routeError.errorCode !== 0)) {
+        statusEl.textContent = 'Could not find a route. Try more specific location names.';
+        statusEl.style.color = '#e74c3c';
+        btn.disabled = false;
+        runCount++;
+        history.push({ run: runCount, from, to, dist: 'N/A', time: 'N/A', ok: false });
+        renderHistory();
+        return;
+      }
+
+      runCount++;
+      statusEl.textContent = '';
+
+      const distKm = (route.distance * 1.60934).toFixed(2) + ' km';
+      const timeStr = formatTime(route.time);
+
+      document.getElementById('dist').textContent = distKm;
+      document.getElementById('time').textContent = timeStr;
+      document.getElementById('route-status').innerHTML =
+        '<span class="badge badge-success">Success</span>';
+
+      // API Details table
+      const apiRows = [
+        ['API Endpoint', 'https://www.mapquestapi.com/directions/v2/route'],
+        ['API Key Used', API_KEY],
+        ['Input: From', from],
+        ['Input: To', to],
+        ['Route Type', 'Fastest'],
+        ['Output Format', 'JSON'],
+        ['Raw Distance (miles)', route.distance.toFixed(4)],
+        ['Converted Distance (km)', distKm],
+        ['Travel Time', timeStr],
+        ['Number of Maneuvers', route.legs[0].maneuvers.length],
+        ['HTTP Status Code', res.status],
+        ['API Status Code', data.info ? data.info.statuscode : '0'],
+      ];
+      document.getElementById('api-details').innerHTML =
+        apiRows.map(([k, v]) =>
+          '<tr><td><strong>' + k + '</strong></td><td>' + v + '</td></tr>'
+        ).join('');
+
+      // Maneuvers table
+      const manBody = document.getElementById('maneuvers');
+      manBody.innerHTML = '';
+      route.legs[0].maneuvers.forEach(function(m, i) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + (i + 1) + '</td>' +
+          '<td>' + m.narrative + '</td>' +
+          '<td>' + (m.distance * 1.60934).toFixed(2) + ' km</td>' +
+          '<td>' + formatTime(m.time) + '</td>';
+        manBody.appendChild(tr);
+      });
+
+      history.push({ run: runCount, from, to, dist: distKm, time: timeStr, ok: true });
+      renderHistory();
+
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('history-section').style.display = 'block';
+
+    } catch (err) {
+      statusEl.textContent = 'Error: ' + err.message;
+      statusEl.style.color = '#e74c3c';
+      runCount++;
+      history.push({ run: runCount, from, to, dist: 'Error', time: 'Error', ok: false });
+      renderHistory();
+      document.getElementById('history-section').style.display = 'block';
+    }
+
+    btn.disabled = false;
+  }
+
+  function renderHistory() {
+    document.getElementById('history-body').innerHTML = history.map(function(h) {
+      return '<tr>' +
+        '<td>' + h.run + '</td>' +
+        '<td>' + h.from + '</td>' +
+        '<td>' + h.to + '</td>' +
+        '<td>' + h.dist + '</td>' +
+        '<td>' + h.time + '</td>' +
+        '<td><span class="badge ' + (h.ok ? 'badge-success' : 'badge-fail') + '">' +
+          (h.ok ? 'Success' : 'Failed') + '</span></td>' +
+        '</tr>';
+    }).join('');
+  }
+</script>
+
+</body>
+</html>
